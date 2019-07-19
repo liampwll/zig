@@ -1197,7 +1197,6 @@ fn parseSuffixExpr(arena: *Allocator, it: *TokenIterator, tree: *Tree) !?*Node {
 ///      / IDENTIFIER
 ///      / IfTypeExpr
 ///      / INTEGER
-///      / KEYWORD_anyerror
 ///      / KEYWORD_comptime TypeExpr
 ///      / KEYWORD_error DOT IDENTIFIER
 ///      / KEYWORD_false
@@ -1228,7 +1227,6 @@ fn parsePrimaryTypeExpr(arena: *Allocator, it: *TokenIterator, tree: *Tree) !?*N
     if (try parseIdentifier(arena, it, tree)) |node| return node;
     if (try parseIfTypeExpr(arena, it, tree)) |node| return node;
     if (try parseIntegerLiteral(arena, it, tree)) |node| return node;
-    if (eatToken(it, .Keyword_anyerror)) |token| return createLiteral(arena, Node.ErrorType, token);
     if (eatToken(it, .Keyword_comptime)) |token| {
         const expr = (try parseTypeExpr(arena, it, tree)) orelse return null;
         const node = try arena.create(Node.Comptime);
@@ -2833,8 +2831,8 @@ fn parseIf(arena: *Allocator, it: *TokenIterator, tree: *Tree, bodyParseFn: Node
 
     const else_token = eatToken(it, .Keyword_else) orelse return node;
     const payload = try parsePayload(arena, it, tree);
-    const else_expr = try expectNode(arena, it, tree, parseExpr, AstError{
-        .ExpectedExpr = AstError.ExpectedExpr{ .token = it.index },
+    const else_expr = try expectNode(arena, it, tree, bodyParseFn, AstError{
+        .InvalidToken = AstError.InvalidToken{ .token = it.index },
     });
     const else_node = try arena.create(Node.Else);
     else_node.* = Node.Else{
